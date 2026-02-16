@@ -6,10 +6,13 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
@@ -69,10 +72,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         askButton = findViewById(R.id.askButton);
 
+        vibrator  = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+        if (!vibrator.hasVibrator()) {
+            Toast.makeText(this, "Вибромотора нет", Toast.LENGTH_SHORT).show();
+        }
+
         askButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showMagicAnswer();
+                startVibration();
             }
         });
 
@@ -132,6 +142,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (speed > SHAKE_THRESHOLD && (currentTime - lastShakeTime) > SHAKE_TIMEOUT) {
                     lastShakeTime = currentTime;
 
+                    startVibration();
+
                     // Запускаем в UI потоке
                     runOnUiThread(new Runnable() {
                         @Override
@@ -146,6 +158,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 lastY = y;
                 lastZ = z;
             }
+        }
+    }
+
+    private void startVibration() {
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+
+        int duration = 500;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            VibrationEffect effect = VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE);
+            vibrator.vibrate(effect);
+        } else {
+            vibrator.vibrate(duration);
         }
     }
 
